@@ -1,0 +1,158 @@
+# How to Add or Remove Steps in Themis Wizard
+
+The Themis wizard's steps are primarily configured in the `config/flows.ts` file. This file defines the sequence of steps for each user role (Author, Implementer, etc.) and their associated components and validation schemas.
+
+### Understanding `config/flows.ts`
+
+The `flows.ts` file contains `FlowStep` arrays, where each `FlowStep` object has:
+
+*   `key`: A unique identifier for the step (e.g., `"selectApp"`). This is used internally for state management.
+*   `title`: The display name of the step shown in the wizard navigation.
+*   `component`: A function that returns the name of the React component responsible for rendering that step's UI (e.g., `() => "SelectApp"`).
+*   `validationSchema`: (Optional) A Zod schema used to validate the data for that step before allowing the user to proceed.
+
+### How to Add a Step
+
+To add a new step to a flow (e.g., the `authorFlow`):
+
+1.  **Define the new step in `config/flows.ts`**:
+    Add a new object to the desired `FlowStep[]` array. Choose a unique `key`, a descriptive `title`, and specify the `component` name. You can also add a `validationSchema` if the step requires data validation.
+
+    \`\`\`typescript
+    // config/flows.ts
+    const authorFlow: FlowStep[] = [
+      // ... existing steps
+      {
+        key: "newStep", // Unique key for the new step
+        title: "New Custom Step", // Title displayed in the wizard
+        component: () => "NewCustomStepComponent", // Name of the component to render
+        // validationSchema: newStepSchema, // Optional: if you need validation
+      },
+      // ... other steps
+    ]
+    \`\`\`
+
+2.  **Create the React Component for the new step**:
+    Create a new `.tsx` file (e.g., `components/wizard/steps/NewCustomStepComponent.tsx`) that exports your step's UI. This component will receive `stepData` and `updateStepData` from the `useWizardState` hook, similar to existing step components.
+
+    ```tsx file="components/wizard/steps/NewCustomStepComponent.tsx"
+    "use client"
+
+    import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+    import { useWizardState } from "@/hooks/useWizardState"
+    import { Lightbulb } from 'lucide-react'
+
+    export function NewCustomStepComponent() {
+      const { stepData, updateStepData } = useWizardState()
+
+      // Example: You might have local state and update stepData on change
+      // const [inputValue, setInputValue] = useState(stepData.newStep?.inputValue || "");
+      // useEffect(() => {
+      //   updateStepData("newStep", { inputValue });
+      // }, [inputValue, updateStepData]);
+
+      return (
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-[#000067]">New Custom Step</h2>
+            <p className="text-[#0000C9]">This is a newly added step in the Themis wizard.</p>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lightbulb className="h-5 w-5 text-[#0095FF]" />
+                Step Content
+              </CardTitle>
+              <CardDescription>You can add your step-specific UI and logic here.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-[#0000C9]">
+                This content will be displayed when the user reaches this step in the wizard.
+                Remember to use `useWizardState` to manage and persist data for this step.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )
+    }
+    \`\`\`
+
+3.  **Map the new component in `app/wizard/page.tsx`**:
+    Add your new component to the `stepComponents` object in `app/wizard/page.tsx` so the `StepLoader` can dynamically render it.
+
+    ```tsx file="app/wizard/page.tsx"
+    // ...
+    import { SelectApp } from "@/components/wizard/steps/SelectApp"
+    import { SelectProfile } from "@/components/wizard/steps/SelectProfile"
+    import { SystemQuestions } from "@/components/wizard/steps/SystemQuestions"
+    import { NewCustomStepComponent } from "@/components/wizard/steps/NewCustomStepComponent" // <-- Add this import
+
+    // Step component mapping
+    const stepComponents: Record<string, React.ComponentType> = {
+      SelectApp,
+      SelectProfile,
+      SystemQuestions,
+      NewCustomStepComponent, // <-- Add this entry
+      // Add more step components as they're implemented
+    }
+    // ...
+    \`\`\`
+
+### How to Remove a Step
+
+To remove an existing step from a flow (e.g., the `iprmProfile` step from `authorFlow`):
+
+1.  **Remove the step definition in `config/flows.ts`**:
+    Locate the `FlowStep` object for the step you want to remove and delete it from the array.
+
+    \`\`\`typescript
+    // config/flows.ts
+    const authorFlow: FlowStep[] = [
+      {
+        key: "selectApp",
+        title: "Select Application",
+        component: () => "SelectApp",
+        validationSchema: selectAppSchema,
+      },
+      // REMOVE THIS STEP:
+      // {
+      //   key: "iprmProfile",
+      //   title: "Select IPRM Profile",
+      //   component: () => "SelectProfile",
+      //   validationSchema: selectProfileSchema,
+      // },
+      {
+        key: "systemQs",
+        title: "Answer System Questions",
+        component: () => "SystemQuestions",
+        validationSchema: systemQuestionsSchema,
+      },
+      // ... other steps
+    ]
+    \`\`\`
+
+2.  **Remove the component mapping in `app/wizard/page.tsx`**:
+    Remove the import statement and the entry from the `stepComponents` object for the component associated with the removed step.
+
+    ```tsx file="app/wizard/page.tsx"
+    // ...
+    import { SelectApp } from "@/components/wizard/steps/SelectApp"
+    // import { SelectProfile } from "@/components/wizard/steps/SelectProfile" // Remove this import
+    import { SystemQuestions } from "@/components/wizard/steps/SystemQuestions"
+
+    // Step component mapping
+    const stepComponents: Record<string, React.ComponentType> = {
+      SelectApp,
+      // SelectProfile, // Remove this entry
+      SystemQuestions,
+      // Add more step components as they're implemented
+    }
+    // ...
+    \`\`\`
+
+3.  **Delete the component file (optional but recommended)**:
+    If the component file (e.g., `components/wizard/steps/SelectProfile.tsx`) is no longer used anywhere in your project, you can delete it to keep your codebase clean.
+
+By following these steps, you can effectively manage the flow and content of your Themis wizard application.
+\`\`\`
