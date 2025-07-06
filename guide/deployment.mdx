@@ -1,0 +1,57 @@
+# Deployment of Themis Application
+
+The Themis wizard application is a Next.js project, which is optimized for deployment on Vercel. Vercel provides a seamless deployment experience for Next.js applications, including automatic scaling, global CDN, and serverless functions.
+
+### Automatic Sync with v0.dev
+
+This project is automatically synced with your deployments on [v0.dev](https://v0.dev). Any changes you make to your deployed app through v0's interface will be automatically pushed to your connected Git repository, and Vercel will deploy the latest version from that repository.
+
+You can find the deployment status and links in your project's `README.md` file:
+
+\`\`\`markdown
+# Next.js with Shadcn
+
+*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+
+[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/your-username/your-project-name)
+[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/your-project-id)
+
+## Overview
+
+This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
+Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+
+## Deployment
+
+Your project is live at:
+
+**[https://vercel.com/your-username/your-project-name](https://vercel.com/your-username/your-project-name)**
+
+## Build your app
+
+Continue building your app on:
+
+**[https://v0.dev/chat/projects/your-project-id](https://v0.dev/chat/projects/your-project-id)**
+\`\`\`
+
+### Environment Variables
+
+While the current Themis application does not explicitly use environment variables, a production Next.js application often requires them for sensitive information like API keys, database credentials, or third-party service configurations.
+
+On Vercel, you can manage environment variables through your project settings in the Vercel Dashboard.
+*   **Server-side environment variables**: These are accessible only on the server (e.g., in Server Actions, Route Handlers, or Server Components).
+*   **Client-side environment variables**: To be accessible on the client, they must be prefixed with `NEXT_PUBLIC_`.
+
+For example, if you had an API key:
+1.  Add `MY_API_KEY=your_secret_key` in your Vercel project settings.
+2.  Access it in your server-side code: `process.env.MY_API_KEY`.
+3.  If needed on the client, add `NEXT_PUBLIC_ANALYTICS_ID=UA-XXXXX` and access it as `process.env.NEXT_PUBLIC_ANALYTICS_ID`.
+
+### Further Deployment Considerations
+
+*   **Custom Domains**: You can easily configure custom domains for your Vercel deployment through the Vercel Dashboard.
+*   **Monitoring and Logs**: Vercel provides built-in monitoring and logging for your deployments, which are essential for debugging and understanding application performance in production.
+*   **Rollbacks**: Vercel keeps a history of your deployments, allowing you to instantly roll back to a previous version if needed.
+
+For more detailed information on deploying Next.js applications on Vercel, refer to the official Vercel documentation.
+\`\`\`

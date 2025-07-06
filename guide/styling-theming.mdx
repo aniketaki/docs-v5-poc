@@ -1,0 +1,127 @@
+# Styling and Theming in Themis
+
+The Themis application uses Tailwind CSS and Shadcn/ui for its styling. This guide explains how the styling is structured and how you can customize it.
+
+### Tailwind CSS Configuration
+
+The core of the styling is managed by Tailwind CSS. The main configuration file is `tailwind.config.ts`.
+
+*   **`tailwind.config.ts`**: This file defines your Tailwind CSS configuration, including custom colors, breakpoints, and other utility classes.
+    \`\`\`typescript
+    // tailwind.config.ts
+    import type { Config } from "tailwindcss"
+
+    const config: Config = {
+      // ...
+      theme: {
+        extend: {
+          colors: {
+            // ... existing Shadcn/ui colors
+            // Themis brand colors
+            themis: {
+              blue: {
+                90: "#000067",
+                70: "#0000C9",
+              },
+              cyan: {
+                50: "#0095FF",
+                30: "#68D1FF",
+                10: "#E0F5FF",
+              },
+            },
+          },
+          // ... other extensions
+        },
+      },
+      // ...
+    } satisfies Config
+
+    export default config
+    \`\`\`
+    You can add new custom colors, fonts, or other design tokens here.
+
+### Global Styles and Custom Variables
+
+The `app/globals.css` file contains the base styles and custom CSS variables, including the Themis brand colors.
+
+*   **`app/globals.css`**: This file imports Tailwind's base, components, and utilities. It also defines CSS variables for the Shadcn/ui theme and custom Themis colors.
+    \`\`\`css
+    /* app/globals.css */
+    @tailwind base;
+    @tailwind components;
+    @tailwind utilities;
+
+    @layer base {
+      :root {
+        /* ... Shadcn/ui color variables */
+        --primary: 221 100% 20%; /* Example: Primary color for Shadcn components */
+        /* ... */
+      }
+
+      .dark {
+        /* ... Dark mode variables */
+      }
+    }
+
+    /* Custom Themis color utilities */
+    .text-themis-blue-90 {
+      color: #000067;
+    }
+    /* ... other custom color classes */
+
+    /* Focus styles for accessibility */
+    .focus-visible\:ring-themis:focus-visible {
+      --tw-ring-color: #0095ff;
+    }
+    \`\`\`
+    The custom Themis colors are defined as direct CSS classes (e.g., `text-themis-blue-90`, `bg-themis-cyan-50`) and also extended in `tailwind.config.ts` for direct use as Tailwind classes (e.g., `text-themis-blue-90`). The `focus-visible:ring-themis` class provides a consistent focus indicator using the brand's cyan color for accessibility.
+
+### Using Themis Colors in Components
+
+You can use the defined Themis colors directly as Tailwind classes in your components.
+
+For example, in `components/auth/AuthPage.tsx`:
+\`\`\`tsx
+// components/auth/AuthPage.tsx
+<div className="p-3 bg-[#000067] rounded-full"> {/* Direct hex value for background */}
+  <Scale className="h-8 w-8 text-white" />
+</div>
+// ...
+<CardTitle className="text-2xl font-bold text-[#000067]">Welcome to Themis</CardTitle> {/* Direct hex value for text */}
+// ...
+<Button
+  className="w-full bg-[#000067] hover:bg-[#0000C9] text-white" // Using direct hex values
+>
+  {/* ... */}
+</Button>
+\`\`\`
+Or, using the named Tailwind classes defined in `tailwind.config.ts`:
+\`\`\`tsx
+// Example using named Tailwind classes (if defined in tailwind.config.ts)
+<div className="p-3 bg-themis-blue-90 rounded-full">
+  <Scale className="h-8 w-8 text-white" />
+</div>
+// ...
+<CardTitle className="text-2xl font-bold text-themis-blue-90">Welcome to Themis</CardTitle>
+// ...
+<Button
+  className="w-full bg-themis-blue-90 hover:bg-themis-blue-70 text-white"
+>
+  {/* ... */}
+</Button>
+\`\`\`
+Both approaches are valid, but using the named Tailwind classes (e.g., `bg-themis-blue-90`) is generally preferred for consistency and easier maintenance once the colors are fully integrated into the Tailwind theme.
+
+### Shadcn/ui Components
+
+Shadcn/ui components automatically pick up the colors defined in your `globals.css` and `tailwind.config.ts` through CSS variables. For instance, `primary` and `secondary` colors are used by default for buttons and other UI elements. If you want to override a Shadcn component's default styling, you can pass Tailwind classes via the `className` prop.
+\`\`\`tsx
+// Example: Customizing a Shadcn Button
+import { Button } from "@/components/ui/button"
+
+<Button className="bg-themis-cyan-50 hover:bg-themis-cyan-30 text-white">
+  Custom Button
+</Button>
+\`\`\`
+This allows for flexible customization while leveraging the utility-first approach of Tailwind CSS.
+\`\`\`

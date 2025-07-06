@@ -1,0 +1,128 @@
+# Form Handling and Validation in Themis
+
+The Themis wizard leverages `react-hook-form` for form management and `zod` for schema-based validation. This combination provides a robust and efficient way to handle user inputs and ensure data integrity across wizard steps.
+
+### Key Libraries
+
+*   **`react-hook-form`**: A popular library for managing forms in React, known for its performance and ease of use. It handles form state, input registration, and submission.
+*   **`zod`**: A TypeScript-first schema declaration and validation library. It allows you to define data shapes and validate them at runtime.
+*   **`@hookform/resolvers`**: Connects `react-hook-form` with `zod` schemas for seamless validation.
+
+### Validation Schemas (`config/flows.ts`)
+
+Each step in the Themis wizard that requires validation has a corresponding Zod schema defined in `config/flows.ts`. These schemas ensure that the data collected at each step meets the required format and constraints before the user can proceed.
+
+\`\`\`typescript
+// config/flows.ts
+import { z } from "zod"
+
+export const selectAppSchema = z.object({
+  applicationId: z.string().min(1, "Please select an application"),
+  applicationName: z.string().min(1, "Application name is required"),
+})
+
+export const selectProfileSchema = z.object({
+  iprmProfile: z.string().min(1, "Please select an IPRM profile"),
+  riskLevel: z.enum(["low", "medium", "high"]),
+})
+
+export const systemQuestionsSchema = z.object({
+  dataClassification: z.string().min(1, "Data classification is required"),
+  complianceRequirements: z.array(z.string()).min(1, "Select at least one compliance requirement"),
+})
+
+// ... flow definitions
+\`\`\`
+These schemas are then associated with their respective steps in the `FlowStep` array.
+
+### How Validation Works in a Step Component
+
+Step components like `SelectApp.tsx`, `SelectProfile.tsx`, and `SystemQuestions.tsx` manage their local state and update the global wizard state (`useWizardState`). While `react-hook-form` is typically used for form validation, in the current Themis setup, the validation is primarily handled by checking if the necessary data is present in `useWizardState` before allowing navigation to the next step.
+
+For example, in `SelectApp.tsx`, the `selectedApp` state is updated, and then `updateStepData` is called. The `useWizardState` hook itself doesn't directly run the Zod validation on every state update. Instead, the `WizardContent` in `app/wizard/page.tsx` would typically perform the validation check using the `validationSchema` defined in `config/flows.ts` when attempting to move to the next step.
+
+**Example: Adding a new field with validation**
+
+Let's say you want to add a new text input for "Project Name" to the `SelectApp` step and make it required.
+
+1.  **Update the Zod Schema in `config/flows.ts`**:
+    Add `projectName` to `selectAppSchema`.
+    \`\`\`typescript
+    // config/flows.ts
+    export const selectAppSchema = z.object({
+      applicationId: z.string().min(1, "Please select an application"),
+      applicationName: z.string().min(1, "Application name is required"),
+      projectName: z.string().min(3, "Project name must be at least 3 characters").max(100, "Project name cannot exceed 100 characters"), // New field
+    })
+    \`\`\`
+
+2.  **Modify the `SelectApp.tsx` component**:
+    Add the input field and manage its state. You would typically use `react-hook-form`'s `useForm` and `Controller` for more complex forms, but for simple inputs, local state and `updateStepData` can suffice.
+
+    \`\`\`tsx
+    // components/wizard/steps/SelectApp.tsx
+    "use client"
+
+    import { useState, useEffect } from "react"
+    import { Building2, Search } from 'lucide-react'
+    import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+    import { Input } from "@/components/ui/input"
+    import { Label } from "@/components/ui/label"
+    import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+    import { useWizardState } from "@/hooks/useWizardState"
+
+    // ... mockApplications
+
+    export function SelectApp() {
+      const { stepData, updateStepData } = useWizardState()
+      const [searchTerm, setSearchTerm] = useState("")
+      const [selectedApp, setSelectedApp] = useState(stepData.selectApp?.applicationId || "")
+      const [projectName, setProjectName] = useState(stepData.selectApp?.projectName || ""); // New state for project name
+
+      // ... filteredApps logic
+
+      useEffect(() => {
+        if (selectedApp) {
+          const app = mockApplications.find((a) => a.id === selectedApp)
+          if (app) {
+            updateStepData("selectApp", {
+              applicationId: app.id,
+              applicationName: app.name,
+              description: app.description,
+              riskLevel: app.riskLevel,
+              projectName: projectName, // Include new field in step data
+            })
+          }
+        }
+      }, [selectedApp, projectName, updateStepData]) // Add projectName to dependencies
+
+      return (
+        <div className="max-w-4xl mx-auto space-y-6">
+          {/* ... existing header */}
+
+          <Card>
+            {/* ... existing card header */}
+            <CardContent className="space-y-4">
+              {/* ... existing search input */}
+
+              {/* New Project Name Input */}
+              <div>
+                <Label htmlFor="projectName" className="text-[#000067]">Project Name</Label>
+                <Input
+                  id="projectName"
+                  placeholder="Enter project name"
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+
+              {/* ... existing RadioGroup for applications */}
+            </CardContent>
+          </Card>
+        </div>
+      )
+    }
+    \`\`\`
+    When the user attempts to navigate to the next step, the `WizardContent` (or a validation function called by it) would retrieve the `selectApp` data from `useWizardState` and validate it against `selectAppSchema`. If validation fails, the user would be prevented from proceeding, and an error message could be displayed (e.g., using `useToast`).
+\`\`\`

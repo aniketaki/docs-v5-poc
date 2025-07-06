@@ -1,0 +1,178 @@
+# Managing Roles and Profiles in Themis
+
+The Themis wizard allows users to select a primary role and, for "Implementer" roles, a specific profile. This selection determines the workflow steps presented to the user. This guide explains how these options are defined and how to add new ones.
+
+### Role and Profile Data Structure
+
+The `RoleSelection.tsx` component uses two arrays, `roleOptions` and `profileOptions`, to display the available choices.
+
+\`\`\`tsx
+// components/wizard/RoleSelection.tsx
+// ... imports
+
+export function RoleSelection() {
+  // ... state and handlers
+
+  const roleOptions = [
+    {
+      id: "author",
+      title: "Author",
+      description: "Create and design IPRM documentation",
+      icon: User,
+      isDisabled: false,
+    },
+    {
+      id: "implementer",
+      title: "Implementer",
+      description: "Implement and execute IPRM requirements",
+      icon: Code,
+      isDisabled: false,
+    },
+    {
+      id: "qa",
+      title: "QA",
+      description: "Quality assurance and validation",
+      icon: TestTube,
+      isDisabled: true,
+      tooltip: "Coming soon",
+    },
+  ]
+
+  const profileOptions = [
+    {
+      id: "developer",
+      title: "Developer",
+      description: "Software development and coding",
+      icon: Code,
+    },
+    {
+      id: "tester",
+      title: "Tester",
+      description: "Testing and quality assurance",
+      icon: TestTube,
+    },
+    {
+      id: "support",
+      title: "Support Lead",
+      description: "Support operations and maintenance",
+      icon: HeadphonesIcon,
+    },
+  ]
+
+  // ... rest of component
+}
+\`\`\`
+Each object in these arrays defines the `id`, `title`, `description`, `icon`, and `isDisabled` (for roles) or `tooltip` properties.
+
+### How to Add New Roles or Profiles
+
+To add a new role or implementer profile, you need to update both the type definitions and the `RoleSelection.tsx` component.
+
+1.  **Update Type Definitions (`types/wizard.ts`)**:
+    First, extend the `UserRole` and `ImplementerProfile` types to include your new options.
+
+    \`\`\`typescript
+    // types/wizard.ts
+    import { z } from "zod"
+
+    export type UserRole = "author" | "implementer" | "qa" | "newRole" // Add "newRole"
+    export type ImplementerProfile = "developer" | "tester" | "support" | "newProfile" // Add "newProfile"
+
+    // Update Zod schemas accordingly
+    export const UserRoleSchema = z.enum(["author", "implementer", "qa", "newRole"])
+    export const ImplementerProfileSchema = z.enum(["developer", "tester", "support", "newProfile"])
+
+    // ... rest of the file
+    \`\`\`
+
+2.  **Add to `roleOptions` or `profileOptions` in `RoleSelection.tsx`**:
+    Add a new object to the respective array in `components/wizard/RoleSelection.tsx`.
+
+    \`\`\`tsx
+    // components/wizard/RoleSelection.tsx
+    // ... imports
+
+    export function RoleSelection() {
+      // ... state and handlers
+
+      const roleOptions = [
+        // ... existing roles
+        {
+          id: "newRole", // Must match the new type
+          title: "New Role Title",
+          description: "Description for the new role.",
+          icon: Info, // Choose an appropriate Lucide React icon
+          isDisabled: false, // Set to true if not yet available
+          tooltip: "This role is under development.", // Optional tooltip for disabled roles
+        },
+      ]
+
+      const profileOptions = [
+        // ... existing profiles
+        {
+          id: "newProfile", // Must match the new type
+          title: "New Profile Title",
+          description: "Description for the new implementer profile.",
+          icon: Info, // Choose an appropriate Lucide React icon
+        },
+      ]
+
+      // ... rest of component
+    }
+    \`\`\`
+    Remember to import any new Lucide React icons you use (e.g., `import { Info } from 'lucide-react'`).
+
+3.  **Define Flow Steps for New Roles/Profiles (`config/flows.ts`)**:
+    If your new role or profile requires a unique set of wizard steps, you'll need to define a new flow in `config/flows.ts` and update the `getFlowSteps` function.
+
+    \`\`\`typescript
+    // config/flows.ts
+    // ... imports and existing schemas
+
+    const newRoleFlow: FlowStep[] = [
+      {
+        key: "firstStepForNewRole",
+        title: "First Step",
+        component: () => "SomeComponent",
+      },
+      // ... define all steps for this new role
+    ]
+
+    const implementerFlows = {
+      // ... existing implementer profiles
+      newProfile: [ // Add new profile flow
+        {
+          key: "firstStepForNewProfile",
+          title: "Profile Specific Step",
+          component: () => "AnotherComponent",
+        },
+        // ... define steps for this new profile
+      ],
+    }
+
+    export const flows = {
+      author: authorFlow,
+      implementer: implementerFlows,
+      newRole: newRoleFlow, // Add new role flow here
+    }
+
+    export function getFlowSteps(role: UserRole, profile?: ImplementerProfile): FlowStep[] {
+      if (role === "author") {
+        return flows.author
+      }
+
+      if (role === "implementer" && profile) {
+        return flows.implementer[profile]
+      }
+
+      if (role === "newRole") { // Handle the new role
+        return flows.newRole
+      }
+
+      return []
+    }
+    \`\`\`
+    You would also need to create the corresponding React components (e.g., `SomeComponent`, `AnotherComponent`) and map them in `app/wizard/page.tsx` as described in the `guide/addstep.mdx` file.
+
+By following these steps, you can effectively expand the role and profile options available in your Themis wizard.
+\`\`\`

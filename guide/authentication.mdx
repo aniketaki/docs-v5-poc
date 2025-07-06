@@ -1,0 +1,180 @@
+# Authentication in Themis
+
+The Themis wizard application includes a basic authentication flow to control access. This guide explains how the authentication is implemented using React state management and Next.js routing.
+
+### Authentication Flow Overview
+
+1.  **Initial Load (`app/page.tsx`)**: When a user first visits the application, `app/page.tsx` checks if they are authenticated and if their session is valid using the `useWizardState` hook.
+2.  **Display `AuthPage`**: If the user is not authenticated or their session has expired, the `AuthPage` component is rendered.
+3.  **Simulated SSO Login**: The `AuthPage` provides an "SSO Login" button. Clicking this button simulates an authentication process.
+4.  **Set Authenticated State**: Upon successful "login," the `setAuthenticated` function from `useWizardState` is called, updating the authentication status and setting a session expiry time.
+5.  **Redirection**: After successful authentication, `app/page.tsx` redirects the user to the `/wizard` route if a role has already been selected, or keeps them on the home page to select a role if not.
+
+### `AuthPage.tsx` Component
+
+The `AuthPage.tsx` component handles the user interface for the login process.
+
+\`\`\`tsx
+// components/auth/AuthPage.tsx
+"use client"
+
+import { useState } from "react"
+import { Scale, Loader2 } from 'lucide-react'
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useWizardState } from "@/hooks/useWizardState"
+
+export function AuthPage() {
+  const [isLoading, setIsLoading] = useState(false)
+  const { setAuthenticated } = useWizardState()
+
+  const handleSSOLogin = async () => {
+    setIsLoading(true)
+
+    // Simulate SSO login process
+    await new Promise((resolve) => setTimeout(resolve, 2000)) // Simulates a 2-second login delay
+
+    setAuthenticated(true) // Sets isAuthenticated to true and updates sessionExpiry
+    setIsLoading(false)
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-[#E0F5FF] to-[#68D1FF] flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center space-y-4">
+          {/* ... Themis logo and title */}
+        </CardHeader>
+        <CardContent>
+          <Button
+            onClick={handleSSOLogin}
+            disabled={isLoading}
+            className="w-full bg-[#000067] hover:bg-[#0000C9] text-white"
+            size="lg"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Authenticating...
+              </>
+            ) : (
+              "SSO Login"
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+\`\`\`
+This component uses local state (`isLoading`) to manage the button's loading state and calls `setAuthenticated` from the global wizard state.
+
+### `useWizardState` for Authentication State
+
+The `useWizardState` Zustand store manages the authentication status and session expiry.
+
+\`\`\`typescript
+// hooks/useWizardState.ts
+"use client"
+
+import { create } from "zustand"
+import { persist } from "zustand/middleware"
+import { type WizardState, WizardStateSchema, type UserRole, type ImplementerProfile } from "@/types/wizard"
+
+interface WizardStore extends WizardState {
+  // ... other state setters
+  setAuthenticated: (isAuth: boolean) => void
+  resetWizard: () => void
+  isSessionValid: () => boolean
+}
+
+const initialState: WizardState = {
+  // ... initial state
+  isAuthenticated: false,
+  sessionExpiry: 0,
+}
+
+export const useWizardState = create<WizardStore>()(
+  persist(
+    (set, get) => ({
+      ...initialState,
+      // ... other actions
+      setAuthenticated: (isAuth) =>
+        set({
+          isAuthenticated: isAuth,
+          sessionExpiry: isAuth ? Date.now() + 24 * 60 * 60 * 1000 : 0, // Session lasts 24 hours
+        }),
+
+      resetWizard: () =>
+        set({
+          ...initialState,
+          isAuthenticated: get().isAuthenticated, // Preserve authentication status on wizard reset
+          sessionExpiry: get().sessionExpiry,
+        }),
+
+      isSessionValid: () => {
+        const state = get()
+        return state.isAuthenticated && Date.now() < state.sessionExpiry
+      },
+    }),
+    {
+      name: "themis-wizard-state",
+      version: 1,
+      // ... migration logic
+    },
+  ),
+)
+\`\`\`
+The `sessionExpiry` is set to 24 hours from the time of authentication. The `isSessionValid` function checks if the user is authenticated and if the current time is before the `sessionExpiry`.
+
+### Session Management in `app/page.tsx`
+
+The `app/page.tsx` (the root page) is responsible for checking the authentication status and redirecting the user accordingly.
+
+\`\`\`tsx
+// app/page.tsx
+"use client"
+
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useWizardState } from "@/hooks/useWizardState"
+import { AuthPage } from "@/components/auth/AuthPage"
+import { RoleSelection } from "@/components/wizard/RoleSelection"
+import { ErrorBoundary } from "@/components/ErrorBoundary"
+
+export default function Home() {
+  const router = useRouter()
+  const { isAuthenticated, isSessionValid, role, resetWizard } = useWizardState()
+
+  useEffect(() => {
+    // Check session validity on mount
+    if (isAuthenticated && !isSessionValid()) {
+      resetWizard() // Resets wizard data but preserves authentication status
+    }
+  }, [isAuthenticated, isSessionValid, resetWizard])
+
+  useEffect(() => {
+    // Redirect to wizard if user has selected a role and is authenticated
+    if (isAuthenticated && role) {
+      router.push("/wizard")
+    }
+  }, [isAuthenticated, role, router])
+
+  if (!isAuthenticated || !isSessionValid()) {
+    return (
+      <ErrorBoundary>
+        <AuthPage /> {/* Render AuthPage if not authenticated or session invalid */}
+      </ErrorBoundary>
+    )
+  }
+
+  return (
+    <ErrorBoundary>
+      <div className="min-h-screen bg-gradient-to-br from-[#E0F5FF] to-[#68D1FF] py-8">
+        <RoleSelection /> {/* Render RoleSelection if authenticated but no role selected */}
+      </div>
+    </ErrorBoundary>
+  )
+}
+\`\`\`
+This setup ensures that unauthenticated users are directed to the login page, and authenticated users are either prompted to select a role or redirected to the wizard.
+\`\`\`
