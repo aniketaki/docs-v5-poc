@@ -42,14 +42,15 @@ function StepLoader({ stepKey }: { stepKey: string }) {
 
 function WizardContent() {
   const router = useRouter()
-  const { isAuthenticated, isSessionValid, role, resetWizard, currentStepIndex } = useWizardState()
+  const { role, profile, currentStepIndex } = useWizardState()
   const { steps, isValidConfig } = useFlowConfig()
 
   useEffect(() => {
-    // Redirect if not authenticated or session expired
-    if (!isAuthenticated || !isSessionValid()) {
-      resetWizard()
-      router.push("/")
+    // Check if user is authenticated using localStorage
+    const isAuthenticated = localStorage.getItem("isAuthenticated") === "true"
+
+    if (!isAuthenticated) {
+      router.push("/login")
       return
     }
 
@@ -58,12 +59,12 @@ function WizardContent() {
       router.push("/")
       return
     }
-  }, [isAuthenticated, isSessionValid, role, resetWizard, router])
+  }, [role, router])
 
-  if (!isAuthenticated || !role || !isValidConfig) {
+  if (!role || !isValidConfig) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#0095FF]" />
+      <div className="flex-1 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-themis-cyan-50" />
       </div>
     )
   }
@@ -75,7 +76,7 @@ function WizardContent() {
       <Suspense
         fallback={
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-[#0095FF]" />
+            <Loader2 className="h-8 w-8 animate-spin text-themis-cyan-50" />
           </div>
         }
       >

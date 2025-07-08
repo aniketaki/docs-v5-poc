@@ -1,43 +1,34 @@
-"use client"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Scale } from "lucide-react"
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useWizardState } from "@/hooks/useWizardState"
-import { AuthPage } from "@/components/auth/AuthPage"
-import { RoleSelection } from "@/components/wizard/RoleSelection"
-import { ErrorBoundary } from "@/components/ErrorBoundary"
-
-export default function Home() {
-  const router = useRouter()
-  const { isAuthenticated, isSessionValid, role, resetWizard } = useWizardState()
-
-  useEffect(() => {
-    // Check session validity on mount
-    if (isAuthenticated && !isSessionValid()) {
-      resetWizard()
-    }
-  }, [isAuthenticated, isSessionValid, resetWizard])
-
-  useEffect(() => {
-    // Redirect to wizard if user has selected a role
-    if (isAuthenticated && role) {
-      router.push("/wizard")
-    }
-  }, [isAuthenticated, role, router])
-
-  if (!isAuthenticated || !isSessionValid()) {
-    return (
-      <ErrorBoundary>
-        <AuthPage />
-      </ErrorBoundary>
-    )
-  }
-
+export default function LandingPage() {
   return (
-    <ErrorBoundary>
-      <div className="min-h-screen bg-gradient-to-br from-[#E0F5FF] to-[#68D1FF] py-8">
-        <RoleSelection />
-      </div>
-    </ErrorBoundary>
+    <div className="flex-1 flex flex-col items-center justify-center py-12 px-4 bg-gradient-to-br from-themis-cyan-10 to-themis-cyan-30">
+      <Card className="w-full max-w-md text-center">
+        <CardHeader className="space-y-4">
+          <div className="flex justify-center">
+            <div className="p-3 bg-themis-blue-90 rounded-full">
+              <Scale className="h-8 w-8 text-white" />
+            </div>
+          </div>
+          <CardTitle className="text-3xl font-bold text-themis-blue-90">Welcome to Themis</CardTitle>
+          <CardDescription className="text-themis-blue-70 text-lg">
+            Your Enterprise Information Protection & Risk Management Wizard
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <p className="text-themis-blue-70 mb-6">
+            Streamline your IPRM workflows with an intuitive, guided experience.
+          </p>
+          <Link href="/login">
+            <Button className="w-full bg-themis-blue-90 hover:bg-themis-blue-70 text-white text-lg py-3" size="lg">
+              Sign In to Get Started
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+    </div>
   )
 }
