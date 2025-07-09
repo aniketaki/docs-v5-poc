@@ -35,7 +35,7 @@ To add a new step to a flow (e.g., the `authorFlow`):
 2.  **Create the React Component for the new step**:
     Create a new `.tsx` file (e.g., `components/wizard/steps/NewCustomStepComponent.tsx`) that exports your step's UI. This component will receive `stepData` and `updateStepData` from the `useWizardState` hook, similar to existing step components.
 
-    ```tsx file="components/wizard/steps/NewCustomStepComponent.tsx"
+    \`\`\`tsx file="components/wizard/steps/NewCustomStepComponent.tsx"
     "use client"
 
     import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -81,7 +81,7 @@ To add a new step to a flow (e.g., the `authorFlow`):
 3.  **Map the new component in `app/wizard/page.tsx`**:
     Add your new component to the `stepComponents` object in `app/wizard/page.tsx` so the `StepLoader` can dynamically render it.
 
-    ```tsx file="app/wizard/page.tsx"
+    \`\`\`tsx file="app/wizard/page.tsx"
     // ...
     import { SelectApp } from "@/components/wizard/steps/SelectApp"
     import { SelectProfile } from "@/components/wizard/steps/SelectProfile"
@@ -135,7 +135,7 @@ To remove an existing step from a flow (e.g., the `iprmProfile` step from `autho
 2.  **Remove the component mapping in `app/wizard/page.tsx`**:
     Remove the import statement and the entry from the `stepComponents` object for the component associated with the removed step.
 
-    ```tsx file="app/wizard/page.tsx"
+    \`\`\`tsx file="app/wizard/page.tsx"
     // ...
     import { SelectApp } from "@/components/wizard/steps/SelectApp"
     // import { SelectProfile } from "@/components/wizard/steps/SelectProfile" // Remove this import
