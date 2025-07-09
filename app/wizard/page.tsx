@@ -42,29 +42,35 @@ function StepLoader({ stepKey }: { stepKey: string }) {
 
 function WizardContent() {
   const router = useRouter()
-  const { role, profile, currentStepIndex } = useWizardState()
+  const { isAuthenticated, isSessionValid, role, resetWizard, currentStepIndex } = useWizardState()
   const { steps, isValidConfig } = useFlowConfig()
 
   useEffect(() => {
-    // Check if user is authenticated using localStorage
-    const isAuthenticated = localStorage.getItem("isAuthenticated") === "true"
+    // Check session validity first
+    if (isAuthenticated && !isSessionValid()) {
+      resetWizard()
+    }
 
-    if (!isAuthenticated) {
-      router.push("/login")
+    // Redirect if not authenticated or session expired
+    if (!isAuthenticated || !isSessionValid()) {
+      router.push("/auth")
       return
     }
 
     // Redirect if no role selected
     if (!role) {
-      router.push("/")
+      router.push("/select-role")
       return
     }
-  }, [role, router])
+  }, [isAuthenticated, isSessionValid, role, resetWizard, router])
 
-  if (!role || !isValidConfig) {
+  if (!isAuthenticated || !isSessionValid() || !role || !isValidConfig) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-themis-cyan-50" />
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-[#0095FF]" />
+          <p className="text-[#000067]">Loading...</p>
+        </div>
       </div>
     )
   }
@@ -76,7 +82,7 @@ function WizardContent() {
       <Suspense
         fallback={
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-themis-cyan-50" />
+            <Loader2 className="h-8 w-8 animate-spin text-[#0095FF]" />
           </div>
         }
       >

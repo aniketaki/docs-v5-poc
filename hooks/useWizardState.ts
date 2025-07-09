@@ -9,7 +9,10 @@ interface WizardStore extends WizardState {
   setProfile: (profile: ImplementerProfile | null) => void
   setCurrentStep: (index: number) => void
   updateStepData: (stepKey: string, data: any) => void
+  setAuthenticated: (isAuth: boolean) => void
+  signOut: () => void
   resetWizard: () => void
+  isSessionValid: () => boolean
 }
 
 const initialState: WizardState = {
@@ -17,6 +20,8 @@ const initialState: WizardState = {
   profile: null,
   currentStepIndex: 0,
   stepData: {},
+  isAuthenticated: false,
+  sessionExpiry: 0,
 }
 
 export const useWizardState = create<WizardStore>()(
@@ -35,13 +40,28 @@ export const useWizardState = create<WizardStore>()(
           stepData: { ...state.stepData, [stepKey]: data },
         })),
 
+      setAuthenticated: (isAuth) =>
+        set({
+          isAuthenticated: isAuth,
+          sessionExpiry: isAuth ? Date.now() + 24 * 60 * 60 * 1000 : 0, // 24 hours
+        }),
+
+      signOut: () =>
+        set({
+          ...initialState, // Reset everything to initial state
+        }),
+
       resetWizard: () =>
         set({
-          role: initialState.role,
-          profile: initialState.profile,
-          currentStepIndex: initialState.currentStepIndex,
-          stepData: initialState.stepData,
+          ...initialState,
+          isAuthenticated: get().isAuthenticated,
+          sessionExpiry: get().sessionExpiry,
         }),
+
+      isSessionValid: () => {
+        const state = get()
+        return state.isAuthenticated && Date.now() < state.sessionExpiry
+      },
     }),
     {
       name: "themis-wizard-state",

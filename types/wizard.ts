@@ -15,6 +15,8 @@ export interface WizardState {
   profile: ImplementerProfile | null
   currentStepIndex: number
   stepData: Record<string, any>
+  isAuthenticated: boolean
+  sessionExpiry: number
 }
 
 export const UserRoleSchema = z.enum(["author", "implementer", "qa"])
@@ -25,4 +27,6 @@ export const WizardStateSchema = z.object({
   profile: ImplementerProfileSchema.nullable(),
   currentStepIndex: z.number().min(0),
   stepData: z.record(z.any()),
+  isAuthenticated: z.boolean(),
+  sessionExpiry: z.number(),
 })
